@@ -8,6 +8,7 @@ import uuid
 from pytube import YouTube
 import jax
 from faster_whisper import WhisperModel
+from fastapi.middleware.cors import CORSMiddleware
 
 jax.config.update('jax_platform_name', 'cpu')
 
@@ -88,6 +89,20 @@ def get_post(text, segments):
 
 
 app = FastAPI()
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:5173"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def download_video(video_url, file_name, callback):
@@ -117,3 +132,13 @@ def get_blog_post(video_url):
     # 1. собрать неполные предложения вместе
     # 2.
     return result
+
+
+@app.get("/video_info")
+def get_video_info(video_url):
+    yt = YouTube(video_url)
+
+    return {
+        "video_id": yt.video_id,
+        "video_length": yt.length
+    }
