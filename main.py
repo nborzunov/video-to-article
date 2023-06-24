@@ -1,3 +1,5 @@
+import sqlite3
+
 from article import add_article
 from video_processing import extract_images
 from fastapi import BackgroundTasks, FastAPI
@@ -31,7 +33,8 @@ def get_blog_post(video_url, background_tasks: BackgroundTasks):
     def transcribe_callback(file_name, _):
         title = get_video_title(video_url)
         preview_url = get_video_preview_url(video_url)
-        add_article(title, preview_url)
+        video_id = convert_video_url_to_filename(video_url)
+        add_article(video_id, title, preview_url)
         transcribe(unique_id)
 
     async def start_processing():
