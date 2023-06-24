@@ -43,14 +43,28 @@ def transcribe(file_name):
     segments = model.transcribe(audio, language="ru", word_timestamps=True, beam_size=1, vad_filter=True)
 
     result = []
+    prev_sentence = ''
+    start_timestamp = 0
     for segments in segments:
         for word in segments:
             if isinstance(word, Segment):
-                result.append({"start": word.start, "end": word.end, "text": word.text})
-                print(result[-1])
+                text = word.text.strip()
+
+                if prev_sentence == '':
+                    start_timestamp = word.start
+                prev_sentence = f'{prev_sentence} {text}'
+
+                if text[-1] in ["!", ".", "?"]:
+                    result.append({"start": start_timestamp, "end": word.end, "text": prev_sentence.strip() })
+                    prev_sentence = ''
+                if len(result) >= 1:
+                    print(result[-1])
 
     end = time.time()
     print('[Transcription] %ss' % round(end - start, 2))
+
+
+
     return result
 
 
@@ -106,13 +120,13 @@ app.add_middleware(
 
 
 def download_video(video_url, file_name, callback):
+    print(f'Started downloading video - [${file_name}]')
     start = time.time()
     youtube_object = YouTube(video_url, on_complete_callback=callback)
     youtube_object = youtube_object.streams.get_by_resolution("720p")
     youtube_object.download("./video", f'${file_name}.mp4')
     end = time.time()
     print('[Download video] %ss' % round(end - start, 2))
-
 
 @app.get("/transcribe")
 def get_blog_post(video_url):
@@ -122,17 +136,11 @@ def get_blog_post(video_url):
 
     def transcribe_callback(a, b):
         nonlocal result
-        print(a, b)
         result = transcribe(unique_id)
-        print(result)
 
     download_video(video_url, unique_id, transcribe_callback)
 
-    # TODO !!!
-    # 1. собрать неполные предложения вместе
-    # 2.
     return result
-
 
 @app.get("/video_info")
 def get_video_info(video_url):
