@@ -7,3 +7,4 @@ speech.wav
 ./videos
 audio
 video
+__pycache__/
