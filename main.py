@@ -1,10 +1,9 @@
-from faster_whisper.transcribe import Segment
+from article import add_article
 from video_processing import extract_images
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pytube import YouTube
 import time
-import sqlite3
 from transcribe import transcribe
 
 
@@ -30,7 +29,9 @@ def get_blog_post(video_url, background_tasks: BackgroundTasks):
     unique_id = convert_video_url_to_filename(video_url)
 
     def transcribe_callback(file_name, _):
-        print("***********")
+        title = get_video_title(video_url)
+        preview_url = get_video_preview_url(video_url)
+        add_article(title, preview_url)
         transcribe(unique_id)
 
     async def start_processing():
@@ -65,3 +66,22 @@ def download_video(video_url, unique_id, callback):
 def convert_video_url_to_filename(video_url):
     video_id = video_url.split("v=")[1]
     return video_id
+
+
+def get_video_title(video_url):
+    # Создаем объект YouTube
+    youtube = YouTube(video_url)
+
+    # Получаем название видео
+    title = youtube.title
+
+    return title
+
+def get_video_preview_url(video_url):
+    # Создаем объект YouTube
+    youtube = YouTube(video_url)
+
+    # Получаем URL превью видео
+    preview_url = youtube.thumbnail_url
+
+    return preview_url
