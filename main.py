@@ -28,14 +28,13 @@ app.add_middleware(
 @app.get("/transcribe")
 def get_blog_post(video_url, background_tasks: BackgroundTasks):
     unique_id = convert_video_url_to_filename(video_url)
-    file_name = f'{unique_id}.mp4'
 
-    def transcribe_callback(file_name, video_id):
-        result = transcribe(unique_id)
-        images_info = extract_images(unique_id, file_name)
+    def transcribe_callback(file_name, _):
+        print("***********")
+        transcribe(unique_id)
 
     async def start_processing():
-        download_video(video_url, unique_id, transcribe_callback, unique_id)
+        download_video(video_url, unique_id, transcribe_callback)
 
     background_tasks.add_task(start_processing)
     return "Started processing..."
@@ -51,15 +50,16 @@ async def get_video_info(video_url):
     }
 
 
-def download_video(video_url, file_name, callback, video_id):
-    print(f'Started downloading video - [{file_name}]')
+def download_video(video_url, unique_id, callback):
+    print(f'Started downloading video - [{unique_id}]')
     start = time.time()
     youtube_object = YouTube(video_url, on_complete_callback=callback)
     youtube_object = youtube_object.streams.get_by_resolution("720p")
-    youtube_object.download("./video", f'{file_name}.mp4')
+    youtube_object.download("./video", f'{unique_id}.mp4')
     end = time.time()
     print('[Download video] %ss' % round(end - start, 2))
-    callback(file_name, video_id)
+
+    extract_images(unique_id)
 
 
 def convert_video_url_to_filename(video_url):

@@ -1,4 +1,6 @@
 import os
+
+import asyncio
 import cv2
 import time
 import sqlite3
@@ -70,16 +72,17 @@ def extract_static_frames(video_path, output_path, video_file_name, static_durat
 def insert_frame_info(video_id, frame_info):
     with sqlite3.connect('db.sqlite3') as conn:
         c = conn.cursor()
+        c.execute("DELETE FROM frames WHERE video_id=?", (video_id,))
         c.execute("INSERT INTO frames (video_id, data) VALUES (?, ?)", (video_id, str(frame_info)))
         conn.commit()
 
 
-def extract_images(video_id, file_name):
-    video_path = f'./video/{file_name}.mp4'
+def extract_images(video_id):
+    video_path = f'./video/{video_id}.mp4'
     output_path = 'screen'
     static_duration = 5
     skip_frames = 20
-    frame_info = extract_static_frames(video_path, output_path, file_name, static_duration, skip_frames)
+    frame_info = extract_static_frames(video_path, output_path, video_id, static_duration, skip_frames)
     insert_frame_info(video_id, frame_info)
 
     return frame_info

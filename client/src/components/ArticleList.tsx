@@ -82,7 +82,7 @@ export const ArticleList = () => {
           отредактировать или удалить ранее загруженные
         </Text>
 
-        <Flex justifyContent={"space-between"}>
+        <Flex justifyContent={"space-between"} alignItems={'center'}>
           <InputGroup size="md" w={"50%"}>
             <Input
               pr="4.5rem"
@@ -135,6 +135,7 @@ export const ArticleList = () => {
               variant="ghost"
               colorScheme="gray"
               size={"lg"}
+              mt={'4px'}
             >
               Удалить выбранные
             </Button>

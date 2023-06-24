@@ -199,24 +199,26 @@ export const UploadForm = () => {
         motionPreset="slideInBottom"
         onClose={onClose}
         isOpen={isOpenAlert}
+        size={'lg'}
         isCentered
       >
         <AlertDialogOverlay />
 
-        <AlertDialogContent>
+        <AlertDialogContent p={4} px={2}>
           <AlertDialogHeader>Видео отправлено на обработку!</AlertDialogHeader>
           <AlertDialogCloseButton />
-          <AlertDialogBody>
+          <AlertDialogBody fontSize={'lg'}>
             <Alert status="success">
               <AlertIcon />
               За прогрессом Вы можете следить на странице менеджера статей.
             </Alert>
           </AlertDialogBody>
-          <AlertDialogFooter>
-            <Button onClick={onCloseAlert}>Добавить ещё видео</Button>
-            <Button colorScheme="red" ml={3} as={Link} to={"/articles"}>
-              Менеджер статей
+          <AlertDialogFooter display={'flex'} justifyContent={'start'}>
+            <Button colorScheme="orange" mr={3} as={Link} to={"/articles"}>
+              Мои статьи
             </Button>
+            <Button mr='2' onClick={onCloseAlert} variant={'ghost'}>Добавить ещё видео</Button>
+
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
