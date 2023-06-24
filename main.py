@@ -1,8 +1,15 @@
+from faster_whisper.transcribe import Segment
 from pydub import AudioSegment
 import time
 from fastapi import FastAPI
 import openai
 import whisper
+import uuid
+from pytube import YouTube
+import jax
+from faster_whisper import WhisperModel
+
+jax.config.update('jax_platform_name', 'cpu')
 
 
 def convert_mp4_to_wav(video_file, audio_file):
@@ -11,10 +18,10 @@ def convert_mp4_to_wav(video_file, audio_file):
     audio.export(audio_file, format="wav")
 
 
-def transcribe():
+def transcribe(file_name):
     print("[Started transcription]")
-    video_file = "video.mp4"
-    audio_file = "speech.wav"
+    video_file = f'./video/${file_name}.mp4'
+    audio_file = f'./audio/${file_name}.wav'
 
     start = time.time()
     convert_mp4_to_wav(video_file, audio_file)
@@ -22,21 +29,27 @@ def transcribe():
     print('[Mp4 -> Wav] %ss' % round(end - start, 2))
 
     start = time.time()
-    audio = whisper.load_audio("speech.wav")
+    audio = whisper.load_audio(audio_file)
     end = time.time()
     print('[Load audio] %ss' % round(end - start, 2))
 
     start = time.time()
-    model = whisper.load_model("tiny", device="cpu")
+    model = WhisperModel("base", device="cpu", compute_type="int8")
     end = time.time()
     print('[Load model] %ss' % round(end - start, 2))
 
     start = time.time()
-    result = model.transcribe(audio, language='en', word_timestamps=True, fp16=False)
+    segments = model.transcribe(audio, language="ru", word_timestamps=True, beam_size=1, vad_filter=True)
+
+    result = []
+    for segments in segments:
+        for word in segments:
+            if isinstance(word, Segment):
+                result.append({"start": word.start, "end": word.end, "text": word.text})
+                print(result[-1])
 
     end = time.time()
     print('[Transcription] %ss' % round(end - start, 2))
-
     return result
 
 
@@ -77,9 +90,30 @@ def get_post(text, segments):
 app = FastAPI()
 
 
-@app.get("/transcribe")
-def get_blog_post():
-    result = transcribe()
+def download_video(video_url, file_name, callback):
+    start = time.time()
+    youtube_object = YouTube(video_url, on_complete_callback=callback)
+    youtube_object = youtube_object.streams.get_by_resolution("720p")
+    youtube_object.download("./video", f'${file_name}.mp4')
+    end = time.time()
+    print('[Download video] %ss' % round(end - start, 2))
 
-    # blogpost = get_post(result['text'], result['segments'])
+
+@app.get("/transcribe")
+def get_blog_post(video_url):
+    unique_id = str(uuid.uuid4())
+
+    result = None
+
+    def transcribe_callback(a, b):
+        nonlocal result
+        print(a, b)
+        result = transcribe(unique_id)
+        print(result)
+
+    download_video(video_url, unique_id, transcribe_callback)
+
+    # TODO !!!
+    # 1. собрать неполные предложения вместе
+    # 2.
     return result
