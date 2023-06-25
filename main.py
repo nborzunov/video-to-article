@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pytube import YouTube
 import time
-from transcribe import transcribe
+from transcribe import transcribe_video
 
 
 app = FastAPI()
@@ -31,11 +31,10 @@ def get_blog_post(video_url, background_tasks: BackgroundTasks):
     unique_id = convert_video_url_to_filename(video_url)
 
     def transcribe_callback(file_name, _):
-        title = get_video_title(video_url)
-        preview_url = get_video_preview_url(video_url)
+        [title, preview_url] = get_video_details(video_url)
         video_id = convert_video_url_to_filename(video_url)
         add_article(video_id, title, preview_url)
-        transcribe(unique_id)
+        transcribe_video(unique_id)
 
     async def start_processing():
         download_video(video_url, unique_id, transcribe_callback)
@@ -71,20 +70,10 @@ def convert_video_url_to_filename(video_url):
     return video_id
 
 
-def get_video_title(video_url):
-    # Создаем объект YouTube
+def get_video_details(video_url):
     youtube = YouTube(video_url)
 
-    # Получаем название видео
     title = youtube.title
-
-    return title
-
-def get_video_preview_url(video_url):
-    # Создаем объект YouTube
-    youtube = YouTube(video_url)
-
-    # Получаем URL превью видео
     preview_url = youtube.thumbnail_url
+    return [title, preview_url]
 
-    return preview_url
