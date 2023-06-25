@@ -74,6 +74,11 @@ def insert_frame_info(video_id, frame_info):
         c = conn.cursor()
         c.execute("DELETE FROM frames WHERE video_id=?", (video_id,))
         c.execute("INSERT INTO frames (video_id, data) VALUES (?, ?)", (video_id, str(frame_info)))
+
+        # Update the status of the corresponding article to "completed"
+
+        c.execute("UPDATE articles SET status='completed' WHERE video_id=?", (video_id,))
+
         conn.commit()
 
 

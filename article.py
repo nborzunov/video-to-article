@@ -1,17 +1,22 @@
 import sqlite3
-from datetime import date
+from datetime import datetime
 
-def add_article(video_id, title, preview_url):
+
+
+def add_article(video_id, title, preview_url, video_length):
     conn = sqlite3.connect('db.sqlite3')
     c = conn.cursor()
 
+    video_id = video_id
     # Здесь выполняйте код для добавления данных о статье в таблицу "articles"
     status = 'processing'
-    start_date = date.today()
+    start_date = datetime.utcnow()
 
-    c.execute("DELETE FROM articles WHERE video_id=?", (video_id,))
-    c.execute("INSERT INTO articles (video_id, title, preview_url, status, start_date) VALUES (?, ?, ?, ?, ?)",
-              (video_id, title, preview_url, status, start_date))
+    processing_time = (0.1977 * video_length) + 35.36
+
+
+    c.execute("INSERT INTO articles (video_id, title, preview_url, status, start_date, processing_time) VALUES (?, ?, ?, ?, ?, ?)",
+              (video_id, title, preview_url, status, start_date, processing_time))
 
     conn.commit()
     conn.close()

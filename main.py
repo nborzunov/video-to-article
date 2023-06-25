@@ -1,3 +1,8 @@
+import mimetypes
+
+from fastapi import FastAPI, BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
+import os
 import sqlite3
 
 from article import add_article
@@ -34,6 +39,8 @@ def get_blog_post(video_url, background_tasks: BackgroundTasks):
         [title, preview_url] = get_video_details(video_url)
         video_id = convert_video_url_to_filename(video_url)
         add_article(video_id, title, preview_url)
+        video_length = YouTube(video_url).length
+        add_article(video_id, title, preview_url, video_length)
         transcribe_video(unique_id)
 
     async def start_processing():
@@ -77,3 +84,44 @@ def get_video_details(video_url):
     preview_url = youtube.thumbnail_url
     return [title, preview_url]
 
+
+@app.get("/articles")
+def get_articles_endpoint():
+    def get_articles():
+        conn = sqlite3.connect('db.sqlite3')
+        c = conn.cursor()
+
+        c.execute("SELECT * FROM articles")
+        articles = c.fetchall()
+
+        conn.close()
+
+        return articles
+    articles = get_articles()
+    return {"articles": articles}
+
+@app.get("/article/{video_id}")
+def get_single_article(video_id):
+    def get_article(video_id):
+        with sqlite3.connect('db.sqlite3') as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute("SELECT * FROM articles WHERE video_id = ?", (video_id,))
+            article = c.fetchone()
+            c.execute("SELECT * FROM frames WHERE video_id = ?", (video_id,))
+            frames = c.fetchone()
+            return article, frames
+
+    def get_screenshots(video_id):
+        screenshot_folder = "screen"
+        screenshot_files = os.listdir(screenshot_folder)
+        screenshots = []
+        for screenshot_file in screenshot_files:
+            if screenshot_file.startswith(video_id):
+                screenshot_path = os.path.join(screenshot_folder, screenshot_file)
+                screenshots.append(FileResponse(screenshot_path, media_type='image/jpeg'))
+        return screenshots
+
+    article = get_article(video_id)
+    screenshots = get_screenshots(video_id)
+    return article, screenshots
